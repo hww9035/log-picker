@@ -7,6 +7,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gomodule/redigo v1.8.5
 	github.com/hpcloud/tail v1.0.0
+	github.com/nsqio/go-nsq v1.1.0
 	github.com/olivere/elastic/v7 v7.0.29
 	go.etcd.io/etcd v2.3.8+incompatible
 	gopkg.in/ini.v1 v1.66.0

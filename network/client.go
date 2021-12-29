@@ -16,7 +16,11 @@ func testClient() {
 		fmt.Println("err :", err)
 		return
 	}
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+		}
+	}(conn)
 	inputReader := bufio.NewReader(os.Stdin)
 	for {
 		input, _ := inputReader.ReadString('\n')

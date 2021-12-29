@@ -19,7 +19,10 @@ func GetClient() redis.Conn {
 }
 
 func CloseRedisConn(conn redis.Conn) {
-	conn.Close()
+	err := conn.Close()
+	if err != nil {
+		return
+	}
 }
 
 func Set(key string, value string) bool {

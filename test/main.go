@@ -1,10 +1,11 @@
-package test
+package main
 
 import (
 	"encoding/json"
 	"fmt"
 	"log-picker/etcd"
 	"log-picker/logPick"
+	"log-picker/utils"
 )
 
 func addLogAgentEtcd() {
@@ -51,4 +52,8 @@ func getLogAgentEtcd() {
 	}
 	etcd.CloseEtcd()
 	fmt.Println(d)
+}
+
+func main() {
+	utils.ReadFileString("/Users/hww/test.log")
 }

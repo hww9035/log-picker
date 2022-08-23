@@ -121,7 +121,12 @@ func GetOutBoundIp() string {
 		fmt.Println(err.Error())
 		return ""
 	}
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(conn)
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 	fmt.Printf("localAddr:%s\n", localAddr.String())
 	ip := strings.Split(localAddr.IP.String(), ":")[0]

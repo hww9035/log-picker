@@ -1,9 +1,10 @@
-package utils
+package other
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 // MyClaims 自定义声明结构体并内嵌jwt.StandardClaims

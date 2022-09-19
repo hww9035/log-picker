@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"gopkg.in/ini.v1"
 	"log-picker/conf"
 	"log-picker/es"

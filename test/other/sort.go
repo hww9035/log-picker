@@ -4,10 +4,6 @@ import (
 	"fmt"
 )
 
-func init() {
-	//fmt.Println("this is sort init")
-}
-
 // Bubble 冒泡排序
 func Bubble() {
 	arr := [10]int{3, 5, 7, 1, 8, 2, 4, 9, 6, 10}
@@ -55,14 +51,4 @@ func SelSort() {
 		}
 	}
 	fmt.Println(arr)
-}
-
-// InsertSort 插入排序
-func InsertSort() {
-
-}
-
-// QuickSort 快速排序
-func QuickSort() {
-
 }

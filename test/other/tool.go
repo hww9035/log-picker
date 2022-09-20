@@ -9,16 +9,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
 	EOF = '\n'
 )
-
-func init() {
-	//fmt.Println("this is tools init")
-}
 
 func closeFile(file *os.File) {
 	err := file.Close()
@@ -32,7 +27,11 @@ func ReadFileString(fileName string) {
 	if err != nil {
 		fmt.Println("ReadFileString server.txt file fail")
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+		}
+	}(file)
 	read := bufio.NewReader(file)
 	for {
 		str, err := read.ReadString(EOF)
@@ -85,7 +84,6 @@ func GetRuntime() {
 	fmt.Println(res)
 }
 
-// Nine 九九乘法
 func Nine() {
 	for i := 1; i <= 9; i++ {
 		for j := 1; j <= i; j++ {
@@ -94,25 +92,6 @@ func Nine() {
 		}
 		fmt.Print("\n")
 	}
-}
-
-func GoThread() {
-	for i := 1; i <= 100; i++ {
-		go func(i int) {
-			fmt.Println(i)
-		}(i)
-	}
-	time.Sleep(time.Second)
-	fmt.Println("GoThread end")
-}
-
-func InnerFunc() int {
-	a := 1
-	b := func(c int) int {
-		b := c + 1
-		return b
-	}
-	return b(a)
 }
 
 func GetOutBoundIp() string {

@@ -46,7 +46,7 @@ func calc(index string, a, b int) int {
 	return ret
 }
 
-func TestDefer() {
+func testDefer() {
 	fmt.Println(f1())
 	fmt.Println(f2())
 	fmt.Println(f3())

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"sort"
 	"time"
 )
 
@@ -25,7 +26,7 @@ func bin101() {
 	fmt.Print(sum, time.Now().UnixMilli()-t)
 }
 
-// 盘子放苹果问题
+// 递归-盘子放苹果问题
 func app(x, y int) int {
 	if x < 0 || y <= 0 {
 		return 0
@@ -124,7 +125,7 @@ func dfs(x, y int, arr [][]int) {
 	dfs(x-1, y, arr)
 }
 
-// 打家劫舍问题
+// 动态规划-打家劫舍问题
 func djjs(arr []int) int {
 	if len(arr) == 0 {
 		return 0
@@ -143,7 +144,26 @@ func djjs(arr []int) int {
 	// fmt.Print(djjs([]int{2, 7, 9, 3, 1}))
 }
 
-// 爬楼梯问题，要么一步步上去，要么跨越两步上
+// 动态规划-梅花桩问题
+func mhz(arr []int) int {
+	if len(arr) == 0 {
+		return 0
+	}
+	dp := make([]int, len(arr))
+	dp[0] = 1
+	for i := 1; i < len(arr); i++ {
+		dp[i] = 1
+		for j := 0; j < i; j++ {
+			if arr[j] < arr[i] {
+				dp[i] = int(math.Max(float64(dp[i]), float64(dp[j]+1)))
+			}
+		}
+	}
+	return dp[len(arr)-1]
+	// fmt.Print(mhz([]int{2, 5, 1, 5, 4, 5, 5, 6}))
+}
+
+// 动态规划-爬楼梯问题，要么一步步上去，要么跨越两步上
 func stairs(n int) int {
 	if n <= 0 {
 		return 0
@@ -157,5 +177,48 @@ func stairs(n int) int {
 	return stairs(n-2) + stairs(n-1)
 }
 
+// 动态规划-最大子串和
+func maxSumChild(arr []int) int {
+	length := len(arr)
+	if length == 0 {
+		return 0
+	}
+	dp := make([]int, length)
+	dp[0] = arr[0]
+	for i := 1; i < length; i++ {
+		tmp := dp[i-1] + arr[i]
+		dp[i] = tmp
+		if tmp < arr[i] {
+			dp[i] = arr[i]
+		}
+	}
+	sort.Ints(dp)
+	return dp[length-1]
+	// fmt.Print(maxSumChild([]int{-2, -1, -3, 4, -1, 2, 1, -5}))
+}
+
+// 动态规划-最大子串乘积
+func maxMultiplyChild(arr []int) int {
+	if len(arr) == 0 {
+		return 0
+	}
+	maxVal := arr[0]
+	minVal := arr[0]
+	res := 0
+
+	for i := 1; i < len(arr); i++ {
+		preMax := maxVal
+		max := math.Max(float64(arr[i]*maxVal), float64(arr[i]*minVal))
+		maxVal = int(math.Max(float64(arr[i]), max))
+		min := math.Min(float64(arr[i]*preMax), float64(arr[i]*minVal))
+		minVal = int(math.Min(float64(arr[i]), min))
+		res = int(math.Max(float64(maxVal), float64(res)))
+	}
+
+	return res
+	// fmt.Print(maxMultiplyChild([]int{-2, -1, -3, 4, -1, 2, 1, -5}))
+}
+
 func main() {
+
 }

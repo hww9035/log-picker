@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// 二进制数含有具体10字符数目
+// 二进制数含有具体101字符数目
 func bin101() {
 	t := time.Now().UnixMilli()
 	sum := 0
@@ -220,5 +220,4 @@ func maxMultiplyChild(arr []int) int {
 }
 
 func main() {
-
 }

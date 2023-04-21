@@ -219,5 +219,53 @@ func maxMultiplyChild(arr []int) int {
 	// fmt.Print(maxMultiplyChild([]int{-2, -1, -3, 4, -1, 2, 1, -5}))
 }
 
+// 滑动窗口找最小覆盖子串
+func minWindow(s string, t string) string {
+	lenS := len(s)
+	resL, resR := -1, -1
+	maxLen := lenS
+	wChar, tChar := map[byte]int{}, map[byte]int{}
+	for i := 0; i < len(t); i++ {
+		tChar[t[i]]++
+	}
+
+	// 范围检查
+	check := func() bool {
+		for k, v := range tChar {
+			if wChar[k] < v {
+				return false
+			}
+		}
+		return true
+	}
+
+	// 有边界移动达到满足要求，扩大范围
+	for l, r := 0, 0; r < lenS; r++ {
+		if r < lenS && tChar[s[r]] > 0 {
+			wChar[s[r]]++
+		}
+		// 满足要求，开始不断左边界移动，缩小范围
+		for check() && l <= r {
+			if _, ok := tChar[s[l]]; ok {
+				wChar[s[l]] -= 1
+			}
+			// 设定最小区间游标
+			if r-l+1 <= maxLen {
+				maxLen = r - l + 1
+				resL = l
+				resR = r + 1
+			}
+			l++
+		}
+	}
+	if resL > -1 {
+		return s[resL:resR]
+	}
+
+	return ""
+}
+
 func main() {
+	println(minWindow("a", "a"))
+	println(minWindow("ADOBECODEBANC", "BAC"))
 }

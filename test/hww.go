@@ -265,7 +265,45 @@ func minWindow(s string, t string) string {
 	return ""
 }
 
+func zeroSolution(A []int) int {
+	alength := len(A)
+	total := 0
+	for k := 1; k <= alength; k++ {
+		max := alength - k
+		for i := 0; i <= max; i++ {
+			if total > 100000 {
+				return -1
+			}
+			if sum(&A, i, k) == 0 {
+				total += 1
+			}
+		}
+	}
+
+	return total
+}
+
+func sum(s *[]int, i, num int) int {
+	sum := 0
+	for j := 0; j < num; j++ {
+		sum += (*s)[j+i]
+	}
+	return sum
+}
+
+func reverseSolution(N int) {
+	var enable_print int
+	enable_print = N % 10
+	for N > 0 {
+		if enable_print == 0 && N%10 != 0 {
+			enable_print = 1
+		}
+		if enable_print == 1 {
+			fmt.Print(N % 10)
+		}
+		N = N / 10
+	}
+}
+
 func main() {
-	println(minWindow("a", "a"))
-	println(minWindow("ADOBECODEBANC", "BAC"))
 }

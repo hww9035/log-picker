@@ -8,10 +8,8 @@ import (
 	"strings"
 )
 
-var addressDial = "127.0.0.1:20000"
-
-func testClient() {
-	conn, err := net.Dial("tcp", addressDial)
+func TestClient() {
+	conn, err := net.Dial("tcp", addressListen)
 	if err != nil {
 		fmt.Println("err :", err)
 		return

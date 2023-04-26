@@ -17,7 +17,7 @@ func process(conn net.Conn) {
 	}(conn)
 	for {
 		reader := bufio.NewReader(conn)
-		var buf [128]byte
+		var buf [10]byte
 		n, err := reader.Read(buf[:])
 		if err != nil {
 			fmt.Println("read from client failed, err:", err)
@@ -29,7 +29,7 @@ func process(conn net.Conn) {
 	}
 }
 
-func testServer() {
+func TestServer() {
 	listen, err := net.Listen("tcp", addressListen)
 	if err != nil {
 		fmt.Println("listen failed, err:", err)

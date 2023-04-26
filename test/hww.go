@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log-picker/test/network"
 	"math"
 	"sort"
 	"time"
@@ -306,4 +307,5 @@ func reverseSolution(N int) {
 }
 
 func main() {
+	network.TestServer()
 }

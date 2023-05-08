@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"go.etcd.io/etcd/clientv3"
 	"log-picker/logPick"
-	"time"
 )
 
 var (

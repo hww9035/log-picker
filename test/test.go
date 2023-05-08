@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"log-picker/queue"
+	"log-picker/mq/nsq"
 )
 
 func Down() {
@@ -33,11 +33,11 @@ func Down() {
 }
 
 func TestNsq() {
-	_ = queue.InitProducer("127.0.0.1:4150")
-	_ = queue.PubMsg("top1", "hello1")
-	_ = queue.PubMsg("top1", "hello2")
-	_ = queue.PubMsg("top1", "hello3")
+	_ = nsq.InitProducer("127.0.0.1:4150")
+	_ = nsq.PubMsg("top1", "hello1")
+	_ = nsq.PubMsg("top1", "hello2")
+	_ = nsq.PubMsg("top1", "hello3")
 	time.Sleep(time.Second * 3)
 
-	queue.TestConsumer("127.0.0.1:4161", "top1", "chan1")
+	nsq.TestConsumer("127.0.0.1:4161", "top1", "chan1")
 }

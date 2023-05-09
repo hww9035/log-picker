@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -33,11 +34,15 @@ func Down() {
 }
 
 func TestNsq() {
-	_ = nsq.InitProducer("127.0.0.1:4150")
-	_ = nsq.PubMsg("top1", "hello1")
-	_ = nsq.PubMsg("top1", "hello2")
-	_ = nsq.PubMsg("top1", "hello3")
-	time.Sleep(time.Second * 3)
-
+	_ = nsq.InitProducer("127.0.0.1:14150")
+	go func() {
+		for {
+			t := time.Now().Unix()
+			_ = nsq.PubMsg("top1", fmt.Sprint("hello-1", t))
+			_ = nsq.PubMsg("top1", fmt.Sprint("hello-2", t))
+			_ = nsq.PubMsg("top1", fmt.Sprint("hello-3", t))
+			time.Sleep(time.Second * 3)
+		}
+	}()
 	nsq.TestConsumer("127.0.0.1:4161", "top1", "chan1")
 }

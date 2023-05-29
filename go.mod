@@ -10,15 +10,17 @@ require (
 	github.com/hpcloud/tail v1.0.0
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/olivere/elastic/v7 v7.0.29
+	github.com/streadway/amqp v1.0.0
 	go.etcd.io/etcd v2.3.8+incompatible
+	google.golang.org/grpc v1.33.2
 	gopkg.in/ini.v1 v1.66.0
 )
 
 require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/streadway/amqp v1.0.0 // indirect
 	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
-	gopkg.in/fsnotify.v1 v1.0.0-00010101000000-000000000000 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 )
 
 require (
@@ -45,7 +47,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63 // indirect
 	golang.org/x/net v0.0.0-20211201190559-0a0e4e1bb54c // indirect
 	//golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
 

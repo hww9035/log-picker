@@ -24,8 +24,13 @@ func (s *HwwServer) mustEmbedUnimplementedHwwServiceServer() {
 }
 
 func main() {
+	// 实例化grpc服务
 	ser := grpc.NewServer()
-	pb.RegisterHwwServiceServer(ser, &HwwServer{})
+
+	// 注册服务
+	pb.RegisterHwwServiceServer(ser, new(HwwServer))
+
+	// 监听并运行服务
 	lis, err := net.Listen("tcp", ":8090")
 	if err != nil {
 		panic("rpc listen fail.")

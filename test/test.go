@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"log-picker/mq/nsq"
@@ -100,4 +102,58 @@ func makeArr(src *[][]int, clo int) [][]int {
 		data = append(data, tmp)
 	}
 	return data
+}
+
+func StrRepeat(str string) {
+	if len(str) == 0 {
+		str = "2[ac2[b2[p]]df]10[g]hj"
+	}
+	sta := make([]string, 0)
+	for _, v := range str {
+		tmp := string(v)
+		if tmp != "]" {
+			sta = append(sta, tmp)
+		} else {
+			index, rep := doRep(sta)
+			//fmt.Printf("index=%d, rep=%s\n", index, rep)
+			if index >= 0 {
+				sta = append(sta[:index], rep)
+			}
+		}
+	}
+
+	fmt.Println(strings.Join(sta, ""))
+}
+
+func doRep(ss []string) (int, string) {
+	nums := ""
+	reps := ""
+	index := 0
+	find := false
+	con := true
+	for i := len(ss) - 1; i >= 0; i-- {
+		b := []byte(ss[i])
+		if (b[0] >= 65 && b[0] <= 90) || (b[0] >= 97 && b[0] <= 122) || ss[i] == "[" {
+			if find {
+				con = false
+			}
+			continue
+		}
+		// 多为数字
+		_, err := strconv.Atoi(ss[i])
+		if err == nil && con {
+			find = true
+			if len(reps) == 0 {
+				reps = strings.Join(ss[i+2:], "")
+			}
+			nums = ss[i] + nums
+			index = i
+		}
+	}
+	if len(reps) > 0 {
+		num, _ := strconv.Atoi(nums)
+		return index, strings.Repeat(reps, num)
+	}
+
+	return 0, ""
 }

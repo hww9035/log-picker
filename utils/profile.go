@@ -191,11 +191,12 @@ func Start(logFile string) Stopper {
         Pf.LogFile = logFile
     }
     Pf.startCpuProfile()
+    Pf.startThreadCreateProfile()
     Pf.startMemProfile()
     Pf.startMutexProfile()
     Pf.startBlockProfile()
-    Pf.startTraceProfile()
     Pf.startThreadCreateProfile()
+    Pf.startTraceProfile()
 
     //go func() {
     //    c := make(chan os.Signal, 1)

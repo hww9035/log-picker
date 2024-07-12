@@ -1,9 +1,8 @@
 package main
 
 import (
+    "flag"
     "fmt"
-    "path"
-    "runtime"
 
     "gorm.io/driver/mysql"
     "gorm.io/gen"
@@ -22,7 +21,7 @@ type dbConfig struct {
 var dbMap = map[string]dbConfig{
     "db_51miz": {
         Host:     "",
-        Port:     3306,
+        Port:     3307,
         User:     "",
         Password: "",
         Dbname:   "",
@@ -36,22 +35,33 @@ var dbMap = map[string]dbConfig{
     },
     "db_51miz_config": {
         Host:     "",
-        Port:     3306,
+        Port:     3307,
         User:     "",
         Password: "",
         Dbname:   "",
     },
 }
 
+var modelPath = ""
+
 func main() {
+    flag.StringVar(&modelPath, "p", "", "please set modelPath parameter.")
+    flag.Parse()
+    if modelPath == "" {
+        modelPath = "."
+    }
     // genDb51miz()
     // genDbTongji()
     // genDb51mizConfig()
 }
 
+func getDsn(dbName string) string {
+    return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbMap[dbName].User, dbMap[dbName].Password, dbMap[dbName].Host, dbMap[dbName].Port, dbMap[dbName].Dbname)
+}
+
 func genDb51miz() {
     dbName := "db_51miz"
-    dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbMap[dbName].User, dbMap[dbName].Password, dbMap[dbName].Host, dbMap[dbName].Port, dbMap[dbName].Dbname)
+    dsn := getDsn(dbName)
     gormdb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
         NamingStrategy: schema.NamingStrategy{
             TablePrefix:   "51miz_",
@@ -61,12 +71,13 @@ func genDb51miz() {
         panic(fmt.Errorf("connect db fail: %w", err))
     }
 
-    _, file, _, _ := runtime.Caller(0)
-    rootPath := path.Dir(path.Dir(file))
+    // _, file, _, _ := runtime.Caller(0)
+    // modelPath = path.Dir(path.Dir(file))
+    fmt.Printf("genDb51miz modelPath: %s\n", modelPath)
 
     g := gen.NewGenerator(gen.Config{
-        OutPath:      rootPath + "/db_51miz/query",
-        ModelPkgPath: rootPath + "/db_51miz/model",
+        OutPath:      modelPath + "/" + dbName + "/query",
+        ModelPkgPath: modelPath + "/" + dbName + "/model",
         Mode:         gen.WithDefaultQuery,
     })
 
@@ -153,7 +164,7 @@ func genDb51miz() {
 
 func genDbTongji() {
     dbName := "tongji_51miz"
-    dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbMap[dbName].User, dbMap[dbName].Password, dbMap[dbName].Host, dbMap[dbName].Port, dbMap[dbName].Dbname)
+    dsn := getDsn(dbName)
     gormdb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
         NamingStrategy: schema.NamingStrategy{
             TablePrefix:   "tongji_",
@@ -163,12 +174,11 @@ func genDbTongji() {
         panic(fmt.Errorf("connect db fail: %w", err))
     }
 
-    _, file, _, _ := runtime.Caller(0)
-    rootPath := path.Dir(path.Dir(file))
+    fmt.Printf("genDbTongji modelPath: %s\n", modelPath)
 
     g := gen.NewGenerator(gen.Config{
-        OutPath:      rootPath + "/db_51miz_tongji/query",
-        ModelPkgPath: rootPath + "/db_51miz_tongji/model",
+        OutPath:      modelPath + "/db_51miz_tongji/query",
+        ModelPkgPath: modelPath + "/db_51miz_tongji/model",
         Mode:         gen.WithDefaultQuery,
     })
 
@@ -183,7 +193,7 @@ func genDbTongji() {
 
 func genDb51mizConfig() {
     dbName := "db_51miz_config"
-    dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbMap[dbName].User, dbMap[dbName].Password, dbMap[dbName].Host, dbMap[dbName].Port, dbMap[dbName].Dbname)
+    dsn := getDsn(dbName)
     gormdb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
         NamingStrategy: schema.NamingStrategy{
             TablePrefix:   "51miz_",
@@ -193,12 +203,11 @@ func genDb51mizConfig() {
         panic(fmt.Errorf("connect db fail: %w", err))
     }
 
-    _, file, _, _ := runtime.Caller(0)
-    rootPath := path.Dir(path.Dir(file))
+    fmt.Printf("genDb51mizConfig modelPath: %s\n", modelPath)
 
     g := gen.NewGenerator(gen.Config{
-        OutPath:      rootPath + "/db_51miz_config/query",
-        ModelPkgPath: rootPath + "/db_51miz_config/model",
+        OutPath:      modelPath + "/" + dbName + "/query",
+        ModelPkgPath: modelPath + "/" + dbName + "/model",
         Mode:         gen.WithDefaultQuery,
     })
 

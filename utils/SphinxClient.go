@@ -159,7 +159,7 @@ type SphOptions struct {
     Limit         int
     MaxMatches    int
     Cutoff        int
-    MaxQueryTime  int
+    MaxQueryTime  int // milliseconds
     Select        string
     MatchMode     int
     RankMode      int
@@ -222,7 +222,14 @@ func NewSphinxClient(opts ...*SphOptions) (sc *SphinxClient) {
     if opts != nil {
         return &SphinxClient{SphOptions: opts[0]}
     }
-    return &SphinxClient{SphOptions: defaultSphinxOptions}
+    return &SphinxClient{
+        SphOptions:   defaultSphinxOptions,
+        weights:      make([]int, 0),
+        filters:      make([]sphFilter, 0),
+        indexWeights: make(map[string]int),
+        fieldWeights: make(map[string]int),
+        overrides:    make(map[string]sphOverride),
+    }
 }
 
 func (sc *SphinxClient) GetLastError() error {
@@ -434,6 +441,21 @@ func (sc *SphinxClient) SetSortMode(mode int, sortBy string) *SphinxClient {
     return sc
 }
 
+func (sc *SphinxClient) SetFieldWeight(name string, val int) *SphinxClient {
+    if val < 1 {
+        sc.err = fmt.Errorf("SetFieldWeight > weight must be positive 32-bit integers, field:%s  weight:%d", name, val)
+        return sc
+    }
+    if sc.fieldWeights == nil {
+        sc.fieldWeights = map[string]int{
+            name: val,
+        }
+    } else {
+        sc.fieldWeights[name] = val
+    }
+    return sc
+}
+
 func (sc *SphinxClient) SetFieldWeights(weights map[string]int) *SphinxClient {
     // 默认权重值为1
     for field, weight := range weights {
@@ -444,6 +466,21 @@ func (sc *SphinxClient) SetFieldWeights(weights map[string]int) *SphinxClient {
     }
 
     sc.fieldWeights = weights
+    return sc
+}
+
+func (sc *SphinxClient) SetIndexWeight(name string, val int) *SphinxClient {
+    if val < 1 {
+        sc.err = fmt.Errorf("SetIndexWeight > weight must be positive 32-bit integers, field:%s  weight:%d", name, val)
+        return sc
+    }
+    if sc.indexWeights == nil {
+        sc.indexWeights = map[string]int{
+            name: val,
+        }
+    } else {
+        sc.indexWeights[name] = val
+    }
     return sc
 }
 
@@ -611,8 +648,10 @@ func (sc *SphinxClient) AddQuery(query, index, comment string) (i int, err error
     req = writeLenStrToBytes(req, query)
 
     req = writeInt32ToBytes(req, len(sc.weights))
-    for _, w := range sc.weights {
-        req = writeInt32ToBytes(req, w)
+    if sc.weights != nil {
+        for _, w := range sc.weights {
+            req = writeInt32ToBytes(req, w)
+        }
     }
 
     req = writeLenStrToBytes(req, index)
@@ -620,29 +659,32 @@ func (sc *SphinxClient) AddQuery(query, index, comment string) (i int, err error
     req = writeInt64ToBytes(req, sc.MinId)
     req = writeInt64ToBytes(req, sc.MaxId)
 
+    // filters
     req = writeInt32ToBytes(req, len(sc.filters))
-    for _, f := range sc.filters {
-        req = writeLenStrToBytes(req, f.attr)
-        req = writeInt32ToBytes(req, f.filterType)
+    if sc.filters != nil {
+        for _, f := range sc.filters {
+            req = writeLenStrToBytes(req, f.attr)
+            req = writeInt32ToBytes(req, f.filterType)
 
-        switch f.filterType {
-        case SphFilterValues:
-            req = writeInt32ToBytes(req, len(f.values))
-            for _, v := range f.values {
-                req = writeInt64ToBytes(req, v)
+            switch f.filterType {
+            case SphFilterValues:
+                req = writeInt32ToBytes(req, len(f.values))
+                for _, v := range f.values {
+                    req = writeInt64ToBytes(req, v)
+                }
+            case SphFilterRange:
+                req = writeInt64ToBytes(req, f.umin)
+                req = writeInt64ToBytes(req, f.umax)
+            case SphFilterFloatrange:
+                req = writeFloat32ToBytes(req, f.fmin)
+                req = writeFloat32ToBytes(req, f.fmax)
             }
-        case SphFilterRange:
-            req = writeInt64ToBytes(req, f.umin)
-            req = writeInt64ToBytes(req, f.umax)
-        case SphFilterFloatrange:
-            req = writeFloat32ToBytes(req, f.fmin)
-            req = writeFloat32ToBytes(req, f.fmax)
-        }
 
-        if f.exclude {
-            req = writeInt32ToBytes(req, 1)
-        } else {
-            req = writeInt32ToBytes(req, 0)
+            if f.exclude {
+                req = writeInt32ToBytes(req, 1)
+            } else {
+                req = writeInt32ToBytes(req, 0)
+            }
         }
     }
 
@@ -665,39 +707,48 @@ func (sc *SphinxClient) AddQuery(query, index, comment string) (i int, err error
         req = writeFloat32ToBytes(req, sc.Longitude)
     }
 
+    // indexWeights
     req = writeInt32ToBytes(req, len(sc.indexWeights))
-    for ind, wei := range sc.indexWeights {
-        req = writeLenStrToBytes(req, ind)
-        req = writeInt32ToBytes(req, wei)
+    if sc.indexWeights != nil {
+        for ind, wei := range sc.indexWeights {
+            req = writeLenStrToBytes(req, ind)
+            req = writeInt32ToBytes(req, wei)
+        }
     }
 
+    // maxQueryTime
     req = writeInt32ToBytes(req, sc.MaxQueryTime)
 
+    // fieldWeights
     req = writeInt32ToBytes(req, len(sc.fieldWeights))
-    for fie, wei := range sc.fieldWeights {
-        req = writeLenStrToBytes(req, fie)
-        req = writeInt32ToBytes(req, wei)
+    if sc.fieldWeights != nil {
+        for fie, wei := range sc.fieldWeights {
+            req = writeLenStrToBytes(req, fie)
+            req = writeInt32ToBytes(req, wei)
+        }
     }
 
     req = writeLenStrToBytes(req, comment)
 
     // attribute overrides
     req = writeInt32ToBytes(req, len(sc.overrides))
-    for _, override := range sc.overrides {
-        req = writeLenStrToBytes(req, override.attrName)
-        req = writeInt32ToBytes(req, override.attrType)
-        req = writeInt32ToBytes(req, len(override.values))
-        for id, v := range override.values {
-            req = writeInt64ToBytes(req, id)
-            switch override.attrType {
-            case SphAttrInteger:
-                req = writeInt32ToBytes(req, v.(int))
-            case SphAttrFloat:
-                req = writeFloat32ToBytes(req, v.(float32))
-            case SphAttrBigint:
-                req = writeInt64ToBytes(req, v.(uint64))
-            default:
-                return -1, fmt.Errorf("AddQuery > attr value is not int/float32/uint64")
+    if sc.overrides != nil {
+        for _, override := range sc.overrides {
+            req = writeLenStrToBytes(req, override.attrName)
+            req = writeInt32ToBytes(req, override.attrType)
+            req = writeInt32ToBytes(req, len(override.values))
+            for id, v := range override.values {
+                req = writeInt64ToBytes(req, id)
+                switch override.attrType {
+                case SphAttrInteger:
+                    req = writeInt32ToBytes(req, v.(int))
+                case SphAttrFloat:
+                    req = writeFloat32ToBytes(req, v.(float32))
+                case SphAttrBigint:
+                    req = writeInt64ToBytes(req, v.(uint64))
+                default:
+                    return -1, fmt.Errorf("AddQuery > attr value is not int/float32/uint64")
+                }
             }
         }
     }

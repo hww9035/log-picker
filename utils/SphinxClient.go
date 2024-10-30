@@ -119,63 +119,63 @@ type sphOverride struct {
     values   map[uint64]interface{}
 }
 
-type SphinxMatch struct {
+type sphinxMatch struct {
     DocId      uint64                 `json:"doc_id"`
     Weight     int                    `json:"weight"`
     AttrValues map[string]interface{} `json:"attr_values"`
 }
 
-type SphinxWordInfo struct {
+type sphinxWordInfo struct {
     Word string `json:"word"`
     Docs int    `json:"docs"`
     Hits int    `json:"hits"`
 }
 
 type SphinxResult struct {
-    Fields     []string         `json:"fields"` // Full-text field namess.
-    attrNames  []string         // Attribute names.
-    attrTypes  []int            // Attribute types.
-    Attrs      map[string]int   `json:"attrs"`      // Attribute names -> types.
-    Matches    []SphinxMatch    `json:"matches"`    // Retrieved matches.
-    Words      []SphinxWordInfo `json:"words"`      // Per-word statistics.
+    Fields     []string         `json:"fields"`     // full-text field namess.
+    AttrNames  []string         `json:"-"`          // attribute names.
+    AttrTypes  []int            `json:"-"`          // attribute types.
+    Attrs      map[string]int   `json:"attrs"`      // attribute names -> types.
+    Matches    []sphinxMatch    `json:"matches"`    // retrieved matches.
+    Words      []sphinxWordInfo `json:"words"`      // per-word statistics.
     Total      int              `json:"total"`      // total matches in this result set.
     TotalFound int              `json:"totalFound"` // total matches found in the index(es).
-    Time       float32          `json:"time"`       // Elapsed time (as reported by searchd), in seconds.
-    Warning    string           `json:"warning"`    // last warning message
-    Error      error            `json:"error"`      // last error
-    Status     int              `json:"status"`     // Query status (refer to SEARCHD_xxx constants in Client).
+    Time       float32          `json:"time"`       // elapsed time (as reported by searchd), in seconds.
+    Warning    string           `json:"warning"`    // last warning message.
+    Error      error            `json:"error"`      // last error.
+    Status     int              `json:"status"`     // query status (refer to SEARCHD_xxx constants in Client).
 }
 
 type SphOptions struct {
-    Host          string
-    Port          int
-    Socket        string
-    SqlPort       int
-    SqlSocket     string
-    RetryCount    int
-    RetryDelay    int
-    Timeout       int
-    Offset        int
-    Limit         int
-    MaxMatches    int
-    Cutoff        int
-    MaxQueryTime  int // milliseconds
-    Select        string
-    MatchMode     int
-    RankMode      int
-    RankExpr      string
-    SortMode      int
-    SortBy        string // attribute to sort by (defualt is "")
-    MinId         uint64 // min ID to match (default is 0, which means no limit)
-    MaxId         uint64 // max ID to match (default is 0, which means no limit)
-    LatitudeAttr  string
-    LongitudeAttr string
-    Latitude      float32
-    Longitude     float32
-    GroupBy       string // group-by attribute name
-    GroupFunc     int    // group-by function (to pre-process group-by attribute value with)
-    GroupSort     string // group-by sorting clause (to sort groups in result set with)
-    GroupDistinct string // group-by count-distinct attribute
+    Host                     string
+    Port                     int
+    Socket                   string
+    SqlPort                  int
+    SqlSocket                string
+    RetryCount               int
+    RetryDelay               int
+    Timeout                  int
+    Offset                   int
+    Limit                    int
+    MaxMatches               int
+    Cutoff                   int
+    MaxQueryTimeMilliseconds int
+    Select                   string
+    MatchMode                int
+    RankMode                 int
+    RankExpr                 string
+    SortMode                 int
+    SortBy                   string // attribute to sort by (defualt is "")
+    MinId                    uint64 // min ID to match (default is 0, which means no limit)
+    MaxId                    uint64 // max ID to match (default is 0, which means no limit)
+    LatitudeAttr             string
+    LongitudeAttr            string
+    Latitude                 float32
+    Longitude                float32
+    GroupBy                  string // group-by attribute name
+    GroupFunc                int    // group-by function (to pre-process group-by attribute value with)
+    GroupSort                string // group-by sorting clause (to sort groups in result set with)
+    GroupDistinct            string // group-by count-distinct attribute
 
     // for sphinxql
     Index   string
@@ -214,7 +214,7 @@ var defaultSphinxOptions = &SphOptions{
     RankMode:   SphRankProximityBm25,
     GroupFunc:  SphGroupbyDay,
     GroupSort:  "@group desc",
-    Timeout:    1000,
+    Timeout:    2000,
     Select:     "*",
 }
 
@@ -362,7 +362,7 @@ func (sc *SphinxClient) SetMaxQueryTime(milliseconds int) *SphinxClient {
         return sc
     }
 
-    sc.MaxQueryTime = milliseconds
+    sc.MaxQueryTimeMilliseconds = milliseconds
     return sc
 }
 
@@ -611,14 +611,16 @@ func (sc *SphinxClient) Query(query, index, comment string) (result *SphinxResul
         index = "*"
     }
 
+    // 重置请求数据
     sc.reqs = nil
+
     if _, err = sc.AddQuery(query, index, comment); err != nil {
         return nil, err
     }
 
-    results, err := sc.RunQueries()
-    if err != nil {
-        return nil, err
+    results, er := sc.RunQueries()
+    if er != nil {
+        return nil, er
     }
     if len(results) == 0 {
         return nil, fmt.Errorf("Query > Empty results!\nClient: %#v", sc)
@@ -646,14 +648,12 @@ func (sc *SphinxClient) AddQuery(query, index, comment string) (i int, err error
     req = writeInt32ToBytes(req, sc.SortMode)
     req = writeLenStrToBytes(req, sc.SortBy)
     req = writeLenStrToBytes(req, query)
-
     req = writeInt32ToBytes(req, len(sc.weights))
     if sc.weights != nil {
         for _, w := range sc.weights {
             req = writeInt32ToBytes(req, w)
         }
     }
-
     req = writeLenStrToBytes(req, index)
     req = writeInt32ToBytes(req, 1) // id64 range marker
     req = writeInt64ToBytes(req, sc.MinId)
@@ -717,7 +717,7 @@ func (sc *SphinxClient) AddQuery(query, index, comment string) (i int, err error
     }
 
     // maxQueryTime
-    req = writeInt32ToBytes(req, sc.MaxQueryTime)
+    req = writeInt32ToBytes(req, sc.MaxQueryTimeMilliseconds)
 
     // fieldWeights
     req = writeInt32ToBytes(req, len(sc.fieldWeights))
@@ -728,6 +728,7 @@ func (sc *SphinxClient) AddQuery(query, index, comment string) (i int, err error
         }
     }
 
+    // comment
     req = writeLenStrToBytes(req, comment)
 
     // attribute overrides
@@ -752,8 +753,9 @@ func (sc *SphinxClient) AddQuery(query, index, comment string) (i int, err error
             }
         }
     }
-
     req = writeLenStrToBytes(req, sc.Select)
+
+    // 单个查询压入请求体
     sc.reqs = append(sc.reqs, req)
     return len(sc.reqs) - 1, nil
 }
@@ -763,24 +765,23 @@ func (sc *SphinxClient) RunQueries() (results []SphinxResult, err error) {
         return nil, fmt.Errorf("RunQueries > No queries defined, issue AddQuery() first")
     }
 
+    // 构造全部查询数据
     nreqs := len(sc.reqs)
     var allReqs []byte
-
     allReqs = writeInt32ToBytes(allReqs, 0)
     allReqs = writeInt32ToBytes(allReqs, nreqs)
     for _, req := range sc.reqs {
         allReqs = append(allReqs, req...)
     }
-
-    response, err := sc.doRequest(SearchdCommandSearch, SphVerCommandSearch, allReqs)
-    if err != nil {
-        return nil, err
+    // 执行请求
+    response, er := sc.doRequest(SearchdCommandSearch, SphVerCommandSearch, allReqs)
+    if er != nil {
+        return nil, er
     }
 
     var bp = byteParser{stream: response}
-
     for i := 0; i < nreqs; i++ {
-        var result = SphinxResult{Status: -1} // Default value of status is 0, but SEARCHD_OK = 0, so must set it to another num.
+        var result = SphinxResult{Status: -1}
         result.Status = bp.Int32()
         if result.Status != SearchdOk {
             message := bp.String()
@@ -801,21 +802,21 @@ func (sc *SphinxClient) RunQueries() (results []SphinxResult, err error) {
         }
 
         numAttrs := bp.Int32()
-        result.attrNames = make([]string, numAttrs)
-        result.attrTypes = make([]int, numAttrs)
+        result.AttrNames = make([]string, numAttrs)
+        result.AttrTypes = make([]int, numAttrs)
         result.Attrs = make(map[string]int)
         for attrNum := 0; attrNum < numAttrs; attrNum++ {
-            result.attrNames[attrNum] = bp.String()
-            result.attrTypes[attrNum] = bp.Int32()
-            result.Attrs[result.attrNames[attrNum]] = result.attrTypes[attrNum]
+            result.AttrNames[attrNum] = bp.String()
+            result.AttrTypes[attrNum] = bp.Int32()
+            result.Attrs[result.AttrNames[attrNum]] = result.AttrTypes[attrNum]
         }
 
         // read match count
         count := bp.Int32()
         id64 := bp.Int32()
-        result.Matches = make([]SphinxMatch, count)
+        result.Matches = make([]sphinxMatch, count)
         for matchesNum := 0; matchesNum < count; matchesNum++ {
-            var match SphinxMatch
+            var match sphinxMatch
             if id64 == 1 {
                 match.DocId = bp.Uint64()
             } else {
@@ -824,9 +825,9 @@ func (sc *SphinxClient) RunQueries() (results []SphinxResult, err error) {
             match.Weight = bp.Int32()
             match.AttrValues = make(map[string]interface{})
 
-            for attrNum := 0; attrNum < len(result.attrTypes); attrNum++ {
-                attrName := result.attrNames[attrNum]
-                attrType := result.attrTypes[attrNum]
+            for attrNum := 0; attrNum < len(result.AttrTypes); attrNum++ {
+                attrName := result.AttrNames[attrNum]
+                attrType := result.AttrTypes[attrNum]
                 switch attrType {
                 case SphAttrBigint:
                     match.AttrValues[attrName] = bp.Uint64()
@@ -866,7 +867,7 @@ func (sc *SphinxClient) RunQueries() (results []SphinxResult, err error) {
         result.Time = float32(bp.Uint32()) / 1000.0
 
         nwords := bp.Int32()
-        result.Words = make([]SphinxWordInfo, nwords)
+        result.Words = make([]sphinxWordInfo, nwords)
         for wordNum := 0; wordNum < nwords; wordNum++ {
             result.Words[wordNum].Word = bp.String()
             result.Words[wordNum].Docs = bp.Int32()
@@ -875,6 +876,8 @@ func (sc *SphinxClient) RunQueries() (results []SphinxResult, err error) {
 
         results = append(results, result)
     }
+
+    // 重置请求数据
     sc.reqs = nil
     return
 }
@@ -986,10 +989,8 @@ func (sc *SphinxClient) BuildExcerpts(docs []string, index, words string, opts E
         iFlags |= 256
     }
     req = writeInt32ToBytes(req, iFlags)
-
     req = writeLenStrToBytes(req, index)
     req = writeLenStrToBytes(req, words)
-
     req = writeLenStrToBytes(req, opts.BeforeMatch)
     req = writeLenStrToBytes(req, opts.AfterMatch)
     req = writeLenStrToBytes(req, opts.ChunkSeparator)
@@ -1000,12 +1001,10 @@ func (sc *SphinxClient) BuildExcerpts(docs []string, index, words string, opts E
     req = writeInt32ToBytes(req, opts.StartPassageId)
     req = writeLenStrToBytes(req, opts.HtmlStripMode)
     req = writeLenStrToBytes(req, opts.PassageBoundary)
-
     req = writeInt32ToBytes(req, len(docs))
     for _, doc := range docs {
         req = writeLenStrToBytes(req, doc)
     }
-
     response, err := sc.doRequest(SearchdCommandExcerpt, SphVerCommandExcerpt, req)
     if err != nil {
         return nil, err
@@ -1123,7 +1122,6 @@ func (sc *SphinxClient) BuildKeywords(query, index string, hits bool) (keywords 
     } else {
         req = writeInt32ToBytes(req, 0)
     }
-
     response, err := sc.doRequest(SearchdCommandKeywords, SphVerCommandKeywords, req)
     if err != nil {
         return nil, err
@@ -1142,7 +1140,6 @@ func (sc *SphinxClient) BuildKeywords(query, index string, hits bool) (keywords 
         }
         keywords[i] = k
     }
-
     return
 }
 
@@ -1156,7 +1153,6 @@ func (sc *SphinxClient) Status() (response [][]string, err error) {
     }
 
     var bp = byteParser{stream: res}
-
     rows := bp.Uint32()
     cols := bp.Uint32()
 
@@ -1192,7 +1188,6 @@ func (sc *SphinxClient) connect() (err error) {
 
     timeout := time.Duration(sc.Timeout) * time.Millisecond
 
-    // Try unix socket first.
     if sc.Socket != "" {
         if sc.conn, err = net.DialTimeout("unix", sc.Socket, timeout); err != nil {
             sc.connerror = true
@@ -1207,7 +1202,7 @@ func (sc *SphinxClient) connect() (err error) {
         return fmt.Errorf("connect() > No valid socket or port")
     }
 
-    // Set deadline
+    // set deadline
     if err = sc.conn.SetDeadline(time.Now().Add(timeout)); err != nil {
         sc.connerror = true
         return fmt.Errorf("connect() conn.SetDeadline() > %v", err)
@@ -1232,6 +1227,7 @@ func (sc *SphinxClient) connect() (err error) {
         return fmt.Errorf("connect() conn.Write() > %d bytes, %v", i, err)
     }
 
+    // reset deadline
     _ = sc.conn.SetDeadline(time.Time{})
 
     return
@@ -1374,6 +1370,7 @@ func DegreeToRadian(degree float32) float32 {
     return degree * math.Pi / 180
 }
 
+// 用于字节数据解析
 type byteParser struct {
     stream []byte
     p      int

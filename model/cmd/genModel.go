@@ -50,7 +50,7 @@ func main() {
     if modelPath == "" {
         modelPath = "."
     }
-    // genDb51miz()
+    // genDb()
     // genDbTongji()
     // genDbConfig()
 }
@@ -59,7 +59,7 @@ func getDsn(dbName string) string {
     return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbMap[dbName].User, dbMap[dbName].Password, dbMap[dbName].Host, dbMap[dbName].Port, dbMap[dbName].Dbname)
 }
 
-func genDb51miz() {
+func genDb() {
     dbName := "db1"
     dsn := getDsn(dbName)
     gormdb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
@@ -73,7 +73,7 @@ func genDb51miz() {
 
     // _, file, _, _ := runtime.Caller(0)
     // modelPath = path.Dir(path.Dir(file))
-    fmt.Printf("genDb51miz modelPath: %s\n", modelPath)
+    fmt.Printf("genDb modelPath: %s\n", modelPath)
 
     g := gen.NewGenerator(gen.Config{
         OutPath:      modelPath + "/" + dbName + "/query",
